@@ -1,4 +1,4 @@
- :root {
+:root {
   --bg: #06121f;
   --bg-soft: #0d1d2f;
   --panel: rgba(15, 27, 42, 0.9);
@@ -86,8 +86,7 @@ textarea {
 .site-nav {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  flex-wrap: wrap;
+  gap: 1.75rem;
 }
 
 .site-nav a {
@@ -138,8 +137,7 @@ textarea {
   font-size: 0.72rem;
 }
 
-.hero-copy h1,
-.page-hero h1 {
+.hero-copy h1 {
   font-size: clamp(2.4rem, 5vw, 4.3rem);
   line-height: 1.08;
   margin: 0 0 1rem;
@@ -151,8 +149,7 @@ textarea {
   max-width: 620px;
 }
 
-.hero-actions,
-.contact-actions {
+.hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
@@ -206,9 +203,7 @@ textarea {
 
 .hero-card,
 .panel,
-.service-card,
-.contact-card,
-.about-panel,
+.agent-card,
 .log-panel {
   background: rgba(15, 27, 42, 0.82);
   border: 1px solid var(--border);
@@ -254,8 +249,7 @@ textarea {
   gap: 1rem;
 }
 
-.metric-grid div,
-.stats-box div {
+.metric-grid div {
   background: rgba(14, 21, 31, 0.75);
   border: 1px solid var(--border);
   border-radius: 1rem;
@@ -263,15 +257,13 @@ textarea {
   text-align: center;
 }
 
-.metric-grid strong,
-.stats-box strong {
+.metric-grid strong {
   display: block;
   font-size: 1.25rem;
   margin-bottom: 0.3rem;
 }
 
-.metric-grid span,
-.stats-box span {
+.metric-grid span {
   color: var(--muted);
   font-size: 0.82rem;
 }
@@ -295,38 +287,44 @@ textarea {
   margin: 0;
 }
 
-.services-grid {
+.agent-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.2rem;
 }
 
-.service-card {
-  padding: 1.5rem;
+.agent-card {
+  padding: 1.3rem;
 }
 
-.card-icon {
-  display: inline-flex;
-  justify-content: center;
+.agent-header {
+  display: flex;
   align-items: center;
-  width: 2.6rem;
-  height: 2.6rem;
-  border-radius: 0.8rem;
-  background: rgba(125, 211, 252, 0.12);
-  color: var(--primary);
-  font-weight: 700;
+  justify-content: space-between;
   margin-bottom: 1rem;
 }
 
-.service-card h3 {
-  margin: 0 0 0.6rem;
-  font-size: 1.3rem;
+.agent-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--primary);
 }
 
-.service-card p,
-.contact-card p,
-.about-copy p,
-.about-panel li {
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--success);
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.8);
+}
+
+.agent-card h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.25rem;
+}
+
+.agent-card p {
   margin: 0;
   color: var(--muted);
 }
@@ -339,6 +337,31 @@ textarea {
 
 .panel {
   padding: 1.4rem;
+}
+
+.input-label {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 0.7rem;
+  font-weight: 600;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 170px;
+  border-radius: 1rem;
+  border: 1px solid var(--border);
+  background: rgba(8, 16, 24, 0.75);
+  color: var(--text);
+  padding: 1rem;
+}
+
+.action-row {
+  margin-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .output-list {
@@ -354,7 +377,7 @@ textarea {
   align-items: center;
   gap: 0.8rem;
   color: var(--muted);
-  padding: 0.8rem 0.9rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--border);
   border-radius: 0.9rem;
   background: rgba(6, 16, 25, 0.7);
@@ -371,14 +394,35 @@ textarea {
   font-weight: 800;
 }
 
-.stats-box {
+.log-panel {
+  padding: 1rem;
   display: grid;
-  gap: 1rem;
+  gap: 0.8rem;
 }
 
-.contact-card {
-  padding: 2rem;
-  text-align: center;
+.log-entry {
+  display: grid;
+  grid-template-columns: 70px 90px 1fr;
+  gap: 0.8rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: rgba(9, 18, 29, 0.8);
+  border-radius: 0.9rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.time {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.agent-name {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.log-message {
+  color: var(--text);
 }
 
 .site-footer {
@@ -419,50 +463,6 @@ textarea {
   color: var(--muted);
 }
 
-.page-hero {
-  padding: 5rem 0 2rem;
-}
-
-.narrow {
-  max-width: 760px;
-}
-
-.about-section {
-  padding: 1rem 0 4rem;
-}
-
-.about-grid {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  gap: 2rem;
-  align-items: start;
-}
-
-.about-copy h2 {
-  font-size: clamp(2rem, 4vw, 2.8rem);
-  margin: 0 0 1rem;
-}
-
-.about-copy p + p {
-  margin-top: 1rem;
-}
-
-.about-panel {
-  padding: 1.5rem;
-}
-
-.about-panel h3 {
-  margin: 0 0 1rem;
-  font-size: 1.4rem;
-}
-
-.about-list {
-  margin: 0;
-  padding-left: 1.2rem;
-  display: grid;
-  gap: 0.8rem;
-}
-
 @media (max-width: 760px) {
   .nav-toggle {
     display: block;
@@ -490,14 +490,14 @@ textarea {
 
   .hero-grid,
   .workflow-grid,
-  .services-grid,
-  .about-grid,
+  .agent-grid,
   .footer-grid {
     grid-template-columns: 1fr;
     display: grid;
   }
 
-  .hero {
-    padding-top: 4rem;
+  .log-entry {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
   }
 }
