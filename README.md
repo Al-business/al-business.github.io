@@ -1,47 +1,41 @@
-# Al Business multi-agent backend
+# Al Business — Render deployment
 
-The GitHub Pages site is static; this API must run on a separate server. The backend makes real model API calls and coordinates six role-specific agents: CEO, CODER, DB, DEVOPS, QA, and DEPLOY. It does not execute shell commands, modify repositories, or deploy applications.
+The GitHub Pages frontend stays at `https://al-business.github.io`; Render runs the Node.js API separately. The API coordinates the six role-based model calls. It does not execute shell commands, modify GitHub repositories, or deploy user projects.
 
-## Configure a model provider
+## Deploy the backend to Render
 
-1. On the server, copy `backend/.env.example` to `backend/.env`.
-2. Set `AI_BASE_URL`, `AI_API_KEY`, and `AI_MODEL` using the provider's current API documentation. The sample base URLs support Groq (`https://api.groq.com/openai/v1`) and Gemini's OpenAI-compatible endpoint (`https://generativelanguage.googleapis.com/v1beta/openai`). Choose one provider and a model available to your account.
-3. Set `ALLOWED_ORIGINS` to the exact deployed website origin, for example `https://al-business.github.io`.
-4. Set `window.AL_BUSINESS_API_URL` in the root `config.js` to the backend's public HTTPS base URL, without a trailing slash.
-5. Never put the provider key in `config.js`, browser code, or a committed file. Store it only in the server's ignored `backend/.env` file or a secrets manager.
-
-## Docker Compose (recommended)
-
-From the repository root on a Linux server with Docker Compose installed:
+1. Sign in to Render and connect the GitHub account that has access to `Al-business/al-business.github.io`.
+2. In Render, choose **New → Blueprint**, select this repository and the `main` branch. Render reads `render.yaml` and creates the `al-business-agent-api-albusiness` web service. The Blueprint selects the paid **Starter** plan so the API does not use the free-instance sleep behavior; verify pricing/current availability in Render before creating it.
+3. In the new service's **Environment** settings, add `AI_API_KEY` and `AI_MODEL`. Keep the key in Render's environment settings only; never commit it to GitHub or put it in `config.js`. The Blueprint sets Groq's OpenAI-compatible base URL by default. To use Gemini, change `AI_BASE_URL` to `https://generativelanguage.googleapis.com/v1beta/openai` and choose a model available to your account.
+4. Wait for the first deploy to finish. Test `https://al-business-agent-api-albusiness.onrender.com/health`; it should return JSON with `"status":"ok"`. If Render assigns a different service hostname, update `window.AL_BUSINESS_API_URL` in the repository's root `config.js` to that exact HTTPS origin and commit the change. GitHub Pages then republishes the frontend.
+5. The Blueprint sets `ALLOWED_ORIGINS=https://al-business.github.io`. If the site is served from another origin, update that variable in Render to the exact origin, without a trailing slash, and redeploy.
+6. Test the API (this makes real model calls and may incur provider charges):
 
 ```sh
-cp backend/.env.example backend/.env
-# Edit backend/.env with the provider key, model, and allowed website origin.
-docker compose up -d --build
-docker compose ps
-curl http://127.0.0.1:3000/health
+curl -X POST https://al-business-agent-api-albusiness.onrender.com/api/chat \
+  -H 'Content-Type: application/json' \
+  -H 'Origin: https://al-business.github.io' \
+  -d '{"message":"Yeni onlayn mağaza üçün MVP planı və agentlər üzrə iş bölgüsü hazırla"}'
 ```
 
-The API port binds to localhost. Put it behind a TLS reverse proxy and expose it publicly over HTTPS. Compose restarts the service unless stopped and checks its health.
+A successful response contains individual `agents` results. The website chat and task form send requests to this API; when it is unavailable or unconfigured, the UI shows an error rather than a fabricated answer.
 
-## PM2 alternative
+## Deploy behavior and security
 
-Install Node.js 20+ and PM2 on the server. Create and configure `backend/.env`, then run from the repository root:
+- Render auto-deploys backend changes pushed to the connected branch. The frontend is separately published by GitHub Pages.
+- The service uses `/health` for health checks. `PORT` is supplied by Render; the server listens on `0.0.0.0`.
+- Use only one deployment platform for the backend at a time (Render, Docker Compose, or PM2).
+- The chat endpoint is internet-accessible and has basic IP rate limiting. Before production use, add authentication/abuse controls and set spending limits at the AI provider. CORS is not authentication.
+- Never commit `backend/.env`; the root `.gitignore` excludes it. Rotate the provider key immediately if it is ever exposed.
+
+## Local development
 
 ```sh
-cd backend && npm install --omit=dev && cd ..
-pm2 start ecosystem.config.cjs
-pm2 save
-pm2 startup
+cd backend
+cp .env.example .env
+# Fill in AI_API_KEY and AI_MODEL in .env.
+npm install
+npm start
 ```
 
-Run the command printed by `pm2 startup` with the appropriate server privileges, then run `pm2 save`. Put the API behind a TLS reverse proxy. Use either PM2 or Docker Compose, not both for the same service.
-
-## API
-
-- `GET /health` — process health check.
-- `GET /api/health` — API configuration status.
-- `POST /api/chat` — JSON `{ "message": "..." }`; returns the combined reply and individual agent responses.
-- `POST /api/agents/run` — alias for the same six-agent workflow.
-
-The website sends requests to `${window.AL_BUSINESS_API_URL}/api/chat`. If the URL, backend, or model credentials are not configured, the interface reports an error; it never invents a response. Configure HTTPS and CORS before exposing the API. Add user authentication before making this public for production; the included IP-based rate limit is only a basic safeguard.
+Set the frontend API URL in `config.js` to `http://localhost:3000` for local browser testing, and set `ALLOWED_ORIGINS` in `backend/.env` to the exact origin used to serve the frontend. Restore the Render URL before committing/deploying the public site.

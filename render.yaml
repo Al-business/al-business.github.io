@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: al-business-agent-api-albusiness
+    runtime: node
+    plan: starter
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: ALLOWED_ORIGINS
+        value: https://al-business.github.io
+      - key: AI_BASE_URL
+        value: https://api.groq.com/openai/v1
+      - key: AI_API_KEY
+        sync: false
+      - key: AI_MODEL
+        sync: false
+      - key: AI_MAX_TOKENS
+        value: 900
+      - key: AI_TIMEOUT_MS
+        value: 60000
