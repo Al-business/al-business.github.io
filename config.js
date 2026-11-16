@@ -1,1 +1,1 @@
-window.AL_BUSINESS_API_URL = "https://al-business-agent-api-albusiness.onrender.com";
+// Kept inactive; the original website does not load this file.
