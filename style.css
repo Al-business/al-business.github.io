@@ -1,148 +1,106 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const yearEl = document.getElementById("year");
-  if (yearEl) {
-    yearEl.textContent = new Date().getFullYear();
-  }
+:root {
+  --bg: #06121f;
+  --bg-soft: #0d1d2f;
+  --panel: rgba(15, 27, 42, 0.9);
+  --panel-strong: rgba(20, 35, 52, 0.95);
+  --primary: #7dd3fc;
+  --primary-strong: #38bdf8;
+  --accent: #fbbf24;
+  --text: #eaf5ff;
+  --muted: #a8bdd6;
+  --border: rgba(148, 163, 184, 0.18);
+  --success: #34d399;
+  --shadow: 0 22px 60px rgba(2, 6, 23, 0.45);
+}
 
-  const navToggle = document.querySelector(".nav-toggle");
-  const nav = document.querySelector(".site-nav");
-
-  if (navToggle && nav) {
-    navToggle.addEventListener("click", () => {
-      const isOpen = nav.classList.toggle("open");
-      navToggle.setAttribute("aria-expanded", String(isOpen));
-    });
-
-    nav.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        nav.classList.remove("open");
-        navToggle.setAttribute("aria-expanded", "false");
-      });
-    });
-  }
-
-  const runBtn = document.getElementById("runWorkflowBtn");
-  const launchBtn = document.getElementById("launchBtn");
-  const resetBtn = document.getElementById("resetBtn");
-  const autonomousBtn = document.getElementById("autonomousModeBtn");
-  const autonomousStatus = document.getElementById("autonomousStatus");
-  const taskInput = document.getElementById("taskInput");
-  const logPanel = document.querySelector(".log-panel");
-
-  const appendLog = (agent, message) => {
-    if (!logPanel) return;
-
-    const entry = document.createElement("div");
-    entry.className = "log-entry";
-    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    entry.innerHTML = `
-      <span class="time">${time}</span>
-      <span class="agent-name">${agent}</span>
-      <span class="log-message">${message}</span>
-    `;
-    logPanel.prepend(entry);
-  };
-
-  const runWorkflow = () => {
-    if (!taskInput) return;
-    const value = taskInput.value.trim();
-    if (!value) {
-      taskInput.focus();
-      return;
-    }
-
-    const steps = [
-      ["CEO", "İş hedefi ve strateji planı hazırlandı."],
-      ["CODER", "Backend ve API yapısı oluşturuluyor."],
-      ["DB", "Veri modeli ve SQL şemaları hazırlanıyor."],
-      ["DEVOPS", "Docker ve deployment dosyaları oluşturuluyor."],
-      ["QA", "Doğrulama ve test akışı çalıştırıldı."],
-      ["DEPLOY", "Yayım adımı başlatıldı."]
-    ];
-
-    steps.forEach(([agent, message], index) => {
-      setTimeout(() => appendLog(agent, message), index * 350);
-    });
-  };
-
-  const runAutonomousWorkflow = async () => {
-    if (!taskInput) return;
-    const value = taskInput.value.trim();
-    if (!value) {
-      taskInput.focus();
-      return;
-    }
-
-    if (autonomousStatus) {
-      autonomousStatus.textContent = "Avtonom mod: başlatıldı";
-    }
-
-    appendLog("SYSTEM", "Avtonom agent kuyruğu başlatıldı.");
-
-    const steps = [
-      ["CEO", "İş hedefi ve strateji planı yeniden doğrulandı."],
-      ["CODER", "Backend ve API katmanı otomatik olarak teyit edildi."],
-      ["DB", "Veri modeli doğrulandı, şema yeni sürüm için güncellendi."],
-      ["DEVOPS", "Docker ve deploy önceliği yeniden değerlendirilip düzeltildi."],
-      ["QA", "QA kontrolü otomatik olarak çalıştırıldı ve iyileştirildi."],
-      ["DEPLOY", "Yayım adımı güvenli şekilde yeniden başlatıldı."]
-    ];
-
-    for (const [agent, message] of steps) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      const shouldFail = Math.random() < 0.28 && agent !== "CEO";
-      if (shouldFail) {
-        appendLog(agent, "Hata algılandı; kendi kendini onarma başlatıldı.");
-
-        for (let retry = 1; retry <= 3; retry += 1) {
-          await new Promise((resolve) => setTimeout(resolve, 350));
-          appendLog(agent, `Yeniden deneme ${retry}/3 çalıştırıldı.`);
-
-          if (Math.random() > 0.3) {
-            appendLog(agent, "Self-heal başarılı: agent tekrar normal çalışmaya döndü.");
-            break;
-          }
-        }
-      }
-
-      appendLog(agent, message);
-    }
-
-    if (autonomousStatus) {
-      autonomousStatus.textContent = "Avtonom mod: normal çalışma sağlandı";
-    }
-
-    appendLog("SYSTEM", "Self-healing döngüsü tamamlandı. Sistem kararlı durumda.");
-  };
-
-  if (runBtn) {
-    runBtn.addEventListener("click", runWorkflow);
-  }
-
-  if (launchBtn) {
-    launchBtn.addEventListener("click", runWorkflow);
-  }
-
-  if (autonomousBtn) {
-    autonomousBtn.addEventListener("click", runAutonomousWorkflow);
-  }
-
-  if (resetBtn && taskInput) {
-    resetBtn.addEventListener("click", () => {
-      taskInput.value = "Alibaba tarzı e-ticaret platformu kur: FastAPI backend, ürün ve kullanıcı tabloları, Dockerfile ve docker-compose.yml.";
-      if (autonomousStatus) {
-        autonomousStatus.textContent = "Avtonom mod: pasif";
-      }
-      if (logPanel) {
-        logPanel.innerHTML = `
-          <div class="log-entry">
-            <span class="time">--:--</span>
-            <span class="agent-name">SYSTEM</span>
-            <span class="log-message">İş akışı sıfırlandı ve bekleme moduna alındı.</span>
-          </div>
-        `;
-      }
-    });
-  }
-});
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--bg); }
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", sans-serif;
+  background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.14), transparent 30%), radial-gradient(circle at bottom right, rgba(251, 191, 36, 0.08), transparent 30%), var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+}
+a { color: inherit; text-decoration: none; }
+button, textarea, select { font: inherit; }
+.container { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
+.site-header { position: sticky; top: 0; z-index: 20; backdrop-filter: blur(18px); background: rgba(6, 18, 31, 0.92); border-bottom: 1px solid var(--border); }
+.nav-wrap { display: flex; align-items: center; justify-content: space-between; min-height: 78px; gap: 1.5rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.75rem; font-weight: 700; letter-spacing: 0.03em; }
+.brand-mark { width: 2.2rem; height: 2.2rem; display: inline-grid; place-items: center; border-radius: 0.7rem; background: linear-gradient(135deg, var(--primary), var(--accent)); color: #06131b; font-weight: 800; }
+.site-nav { display: flex; align-items: center; gap: 1.75rem; }
+.site-nav a { color: var(--muted); font-weight: 500; transition: color 0.2s ease; }
+.site-nav a:hover, .site-nav a.active { color: var(--text); }
+.nav-toggle { display: none; background: transparent; border: 0; padding: 0.2rem; cursor: pointer; }
+.nav-toggle span { display: block; width: 1.8rem; height: 2px; background: var(--text); border-radius: 999px; margin: 0.32rem 0; }
+.hero { padding: 5rem 0 3rem; }
+.hero-grid { display: grid; grid-template-columns: 1.15fr 0.85fr; align-items: center; gap: 2rem; }
+.eyebrow { margin: 0 0 1rem; color: var(--primary); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 0.72rem; }
+.hero-copy h1 { font-size: clamp(2.4rem, 5vw, 4.3rem); line-height: 1.08; margin: 0 0 1rem; }
+.lead { color: var(--muted); font-size: 1.06rem; max-width: 620px; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 1.5rem; }
+.btn { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0.8rem 1.4rem; border: 1px solid transparent; border-radius: 0.85rem; font-weight: 600; cursor: pointer; transition: transform 0.2s ease, opacity 0.2s ease; }
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-strong)); color: #06131b; box-shadow: var(--shadow); }
+.btn-secondary { background: transparent; border-color: var(--border); color: var(--text); }
+.hero-points { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 1rem 1.8rem; color: var(--muted); }
+.hero-points li::before { content: "•"; color: var(--success); margin-right: 0.5rem; }
+.hero-card, .panel, .agent-card, .log-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 1.4rem; box-shadow: var(--shadow); }
+.hero-card { padding: 1.2rem; }
+.mini-panel { border-radius: 1.1rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(125, 211, 252, 0.1), rgba(251, 191, 36, 0.08)); border: 1px solid rgba(125, 211, 252, 0.18); }
+.tag { display: inline-block; padding: 0.35rem 0.75rem; border-radius: 999px; background: rgba(14, 17, 29, 0.6); color: var(--primary); font-size: 0.74rem; margin-bottom: 1rem; }
+.status-panel h2 { font-size: 2.6rem; margin: 0 0 0.4rem; }
+.status-panel p { color: var(--muted); margin: 0; }
+.metric-grid { margin-top: 1.2rem; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.metric-grid div { background: rgba(14, 21, 31, 0.75); border: 1px solid var(--border); border-radius: 1rem; padding: 1rem 0.75rem; text-align: center; }
+.metric-grid strong { display: block; font-size: 1.25rem; margin-bottom: 0.3rem; }
+.metric-grid span { color: var(--muted); font-size: 0.82rem; }
+.section { padding: 2rem 0 4rem; }
+.section-heading { text-align: center; margin-bottom: 2rem; }
+.section-heading.left { text-align: left; margin-bottom: 1.2rem; }
+.section-heading h2 { font-size: clamp(2rem, 4vw, 2.7rem); margin: 0; }
+.agent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.2rem; }
+.agent-card { padding: 1.3rem; }
+.agent-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+.agent-badge { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; color: var(--primary); }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); box-shadow: 0 0 12px rgba(52, 211, 153, 0.8); }
+.agent-card h3 { margin: 0 0 0.4rem; font-size: 1.25rem; }
+.agent-card p { margin: 0; color: var(--muted); }
+.workflow-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 1.5rem; }
+.panel { padding: 1.4rem; }
+.input-label { display: block; color: var(--muted); margin-bottom: 0.7rem; font-weight: 600; }
+textarea { width: 100%; resize: vertical; min-height: 170px; border-radius: 1rem; border: 1px solid var(--border); background: rgba(8, 16, 24, 0.9); color: var(--text); padding: 1rem; }
+.action-row { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.output-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.output-list li { display: flex; align-items: center; gap: 0.8rem; color: var(--muted); padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: 0.9rem; background: rgba(6, 16, 25, 0.7); }
+.check { display: inline-grid; place-items: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; background: rgba(52, 211, 153, 0.12); color: var(--success); font-weight: 800; }
+.log-panel { padding: 1rem; display: grid; gap: 0.8rem; }
+.log-entry { display: grid; grid-template-columns: 70px 90px 1fr; gap: 0.8rem; align-items: center; border: 1px solid var(--border); background: rgba(9, 18, 29, 0.8); border-radius: 0.9rem; padding: 0.85rem 1rem; }
+.time { color: var(--muted); font-size: 0.8rem; }
+.agent-name { font-weight: 700; color: var(--primary); }
+.log-message { color: var(--text); overflow-wrap: anywhere; }
+.site-footer { border-top: 1px solid var(--border); padding-top: 2rem; background: rgba(6, 18, 31, 0.55); }
+.footer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; padding-bottom: 1.5rem; }
+.footer-brand { margin-bottom: 1rem; }
+.site-footer h3 { margin-bottom: 0.8rem; }
+.site-footer ul { margin: 0; padding: 0; list-style: none; color: var(--muted); }
+.site-footer li + li { margin-top: 0.4rem; }
+.footer-bottom { border-top: 1px solid var(--border); padding: 1rem 0 2rem; text-align: center; color: var(--muted); }
+.page-hero { padding: 5rem 0 2rem; }
+.narrow { max-width: 800px; }
+.about-section { padding: 2rem 0 5rem; }
+.about-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 2rem; align-items: start; }
+.about-copy h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.2; margin-top: 0; }
+.about-copy p, .about-panel li { color: var(--muted); }
+.about-panel { padding: 1.5rem; border: 1px solid var(--border); border-radius: 1.2rem; background: var(--panel); box-shadow: var(--shadow); }
+.about-panel ul { padding-left: 1.2rem; }
+.about-panel li + li { margin-top: 0.6rem; }
+@media (max-width: 760px) {
+  .nav-toggle { display: block; }
+  .site-nav { position: absolute; top: 78px; left: 1rem; right: 1rem; display: none; flex-direction: column; align-items: flex-start; gap: 1rem; padding: 1rem; border-radius: 1rem; background: #0d1d2f; border: 1px solid var(--border); }
+  .site-nav.open { display: flex; }
+  .hero-grid, .workflow-grid, .agent-grid, .footer-grid, .about-grid { grid-template-columns: 1fr; }
+  .log-entry { grid-template-columns: 1fr; gap: 0.2rem; }
+}
