@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import { Sandbox } from "e2b";
 import "dotenv/config";
 
 const app = express();
@@ -33,7 +34,7 @@ const agents = [
   { name: "DEPLOY", role: "Buraxılış mütəxəssisi", instruction: "Buraxılış və rollback yoxlama siyahısını yaz; əməliyyatın icra edildiyini iddia etmə." },
 ];
 
-// MVP queue is process-local: restarting the service clears queued jobs.
+// The MVP queue is process-local; use persistent storage before multi-instance production use.
 const jobs = new Map();
 let nextJobId = 1;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -138,8 +139,6 @@ function enqueueHandler(req, res) {
   return res.status(202).json({ id, status: "queued", createdAt });
 }
 
-// Code generation is limited to downloadable text files. Nothing is written to the server
-// filesystem, executed, installed, pushed, or deployed by this MVP.
 const allowedExtensions = new Set([".html", ".css", ".js", ".ts", ".json", ".md", ".txt", ".py", ".yml", ".yaml", ".toml"]);
 function validateGeneratedFiles(files) {
   if (!Array.isArray(files) || files.length < 1 || files.length > 8) throw new Error("Agent 1–8 layihə faylı qaytarmalıdır.");
@@ -150,7 +149,8 @@ function validateGeneratedFiles(files) {
     const path = file.path.trim().replaceAll("\\", "/");
     const parts = path.split("/");
     const ext = path.slice(path.lastIndexOf(".")).toLowerCase();
-    if (!path || path.startsWith("/") || parts.some((part) => !part || part === "." || part === "..") ||
+    if (!path || path.startsWith("/") || !/^[A-Za-z0-9._/-]+$/.test(path) ||
+        parts.some((part) => !part || part === "." || part === "..") ||
         parts.some((part) => part.startsWith(".")) || /(^|\/)(node_modules|\.git)(\/|$)/i.test(path) ||
         /(^|\/)(\.env(?:\.|$)|secrets?\.|id_rsa|credentials?)/i.test(path) || !allowedExtensions.has(ext)) {
       throw new Error(`İcazə verilməyən fayl yolu və ya tipi: ${path}`);
@@ -167,8 +167,38 @@ function validateGeneratedFiles(files) {
   });
 }
 
+// Validation is intentionally limited to syntax checks. No generated project command,
+// package script, dependency installer, or network request is run in this sandbox.
+async function validateInSandbox(files) {
+  if (!process.env.E2B_API_KEY) {
+    return { status: "not-configured", checks: [], note: "E2B_API_KEY təyin edilməyib; sandbox yoxlaması aparılmadı." };
+  }
+  let sandbox;
+  const checks = [];
+  try {
+    sandbox = await Sandbox.create({ timeoutMs: 120_000 });
+    for (const file of files) {
+      const extension = file.path.slice(file.path.lastIndexOf(".")).toLowerCase();
+      if (![".js", ".py"].includes(extension)) continue;
+      const sandboxPath = `/home/user/${file.path}`;
+      await sandbox.files.write(sandboxPath, file.content);
+      const result = extension === ".js"
+        ? await sandbox.commands.run(`node --check /home/user/${file.path}`, { timeoutMs: 10_000 })
+        : await sandbox.commands.run(`python -m py_compile /home/user/${file.path}`, { timeoutMs: 10_000 });
+      checks.push({ path: file.path, status: result.exitCode === 0 ? "passed" : "failed", output: String(result.stderr || result.stdout || "").slice(0, 2000) });
+    }
+    const failed = checks.some((check) => check.status === "failed");
+    return { status: failed ? "failed" : checks.length ? "passed" : "no-supported-files", checks };
+  } catch (error) {
+    console.error("Sandbox validation failed:", error.message);
+    return { status: "error", checks, note: "Sandbox yoxlaması baş tutmadı; faylları yoxlamadan istifadə etməyin." };
+  } finally {
+    if (sandbox) await sandbox.kill().catch((error) => console.error("Sandbox cleanup failed:", error.message));
+  }
+}
+
 app.get("/health", (_req, res) => res.json({ status: "ok", service: "al-business-agent-api" }));
-app.get("/api/health", (_req, res) => res.json({ status: "ok", aiConfigured: Boolean(process.env.AI_API_KEY && process.env.AI_BASE_URL && process.env.AI_MODEL), queuedJobs: [...jobs.values()].filter((job) => job.status === "queued").length }));
+app.get("/api/health", (_req, res) => res.json({ status: "ok", aiConfigured: Boolean(process.env.AI_API_KEY && process.env.AI_BASE_URL && process.env.AI_MODEL), sandboxConfigured: Boolean(process.env.E2B_API_KEY), queuedJobs: [...jobs.values()].filter((job) => job.status === "queued").length }));
 app.post("/api/agents/run", enqueueHandler);
 app.post("/api/chat", enqueueHandler);
 
@@ -195,7 +225,8 @@ app.post("/api/agent/build", async (req, res, next) => {
       throw error;
     }
     const files = validateGeneratedFiles(payload.files);
-    return res.json({ summary: String(payload.summary || "Layihə faylları hazırlandı.").slice(0, 1000), files, execution: "not-run" });
+    const validation = await validateInSandbox(files);
+    return res.json({ summary: String(payload.summary || "Layihə faylları hazırlandı.").slice(0, 1000), files, validation, execution: "syntax-check-only" });
   } catch (error) {
     return next(error);
   }

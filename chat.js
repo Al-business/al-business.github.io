@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   if (!form || !input || !messages) return;
 
-  // Add a project-builder mode without changing the existing dashboard markup.
   const modeLabel = document.createElement("label");
   modeLabel.className = "input-label";
   modeLabel.htmlFor = "agentMode";
@@ -24,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const mode = document.createElement("select");
   mode.id = "agentMode";
   mode.className = "agent-mode-select";
-  [["chat", "Agentlərlə danış"], ["build", "Layihə faylları yarat"]].forEach(([value, label]) => {
+  [["chat", "Agentlərlə danış"], ["build", "Layihə yarat və sintaksisi yoxla"]].forEach(([value, label]) => {
     const option = document.createElement("option");
     option.value = value;
     option.textContent = label;
@@ -104,15 +103,22 @@ document.addEventListener("DOMContentLoaded", () => {
     send.disabled = true;
     try {
       if (mode.value === "build") {
-        status.textContent = "Agent layihə fayllarını yaradır...";
+        status.textContent = "Agent layihə fayllarını yaradır və mövcud olduqda sandbox-da sintaksisi yoxlayır...";
         const response = await fetch(`${apiBase}/api/agent/build`, {
           method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message })
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || `Agent xətası (${response.status}).`);
-        addMessage("AGENT · XÜLASƏ", `${data.summary}\n\nFayllar icra edilməyib; endirib özünüz yoxlayın.`);
+        const checkText = data.validation?.status === "passed"
+          ? "JS/Python sintaksis yoxlaması sandbox-da keçdi. Bu, tətbiqin tam test edildiyini bildirmir."
+          : data.validation?.status === "not-configured"
+            ? "Sandbox qurulmayıb; fayllar avtomatik yoxlanmadı."
+            : data.validation?.status === "no-supported-files"
+              ? "Sintaksis yoxlanacaq JS/Python faylı yaranmadı."
+              : "Sandbox yoxlaması uğursuz və ya yarımçıqdır; faylları işlək saymayın.";
+        addMessage("AGENT · XÜLASƏ", `${data.summary}\n\n${checkText}\nFayllar icra edilməyib və repoya yazılmayıb; endirib özünüz nəzərdən keçirin.`);
         (data.files || []).forEach(addDownload);
-        status.textContent = `${data.files?.length || 0} fayl yaradıldı; heç bir kod serverdə icra edilmədi.`;
+        status.textContent = `${data.files?.length || 0} fayl yaradıldı; ${data.validation?.status || "yoxlanılmadı"}.`;
       } else {
         status.textContent = "Tapşırıq agent növbəsinə göndərilir...";
         const response = await fetch(`${apiBase}/api/chat`, {

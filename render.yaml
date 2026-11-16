@@ -20,22 +20,9 @@ services:
         sync: false
       - key: AI_MODEL
         sync: false
-      - key: DATABASE_URL
-        fromDatabase:
-          name: al-business-agent-jobs
-          property: connectionString
-      - key: MAX_JOB_ATTEMPTS
-        value: 3
-      - key: JOB_LEASE_SECONDS
-        value: 180
+      - key: E2B_API_KEY
+        sync: false
       - key: AI_MAX_TOKENS
-        value: 900
+        value: 1400
       - key: AI_TIMEOUT_MS
         value: 60000
-
-databases:
-  - name: al-business-agent-jobs
-    databaseName: al_business_agents
-    user: al_business_agents
-    plan: basic-256mb
-    region: frankfurt

@@ -1,26 +1,26 @@
-# Al Business Coding Agent MVP
+# Al Business Coding Agent
 
-This MVP has a chat mode and a project-file generation mode. It asks a configured AI provider for a small project, validates the returned relative paths/extensions and size, then presents individual files for download. It does **not** write generated files to the server, execute shell commands, install packages, run tests, push commits, or deploy projects.
+The project builder generates a small set of reviewable project files and returns them for download. If `E2B_API_KEY` is configured, JavaScript and Python files receive bounded syntax-only checks inside a short-lived E2B sandbox. The sandbox is always terminated after the checks. The agent does not run project scripts, install dependencies, access a user's repository, make network requests from the sandbox, push changes, or deploy.
 
-## Run locally
+## Local setup
 
-1. Install Node.js 20+ and a local AI-compatible provider key.
-2. In `backend`, copy `.env.example` to `.env` and set `AI_API_KEY` and `AI_MODEL`.
-3. Run `npm install && npm start` in `backend`.
-4. Open the GitHub Pages site or serve the root folder locally. For local work, change `config.js` API URL to `http://localhost:3000`.
+1. Install Node.js 20+.
+2. In `backend`, copy `.env.example` to `.env`; set `AI_API_KEY`, `AI_MODEL`, and optionally `E2B_API_KEY`.
+3. Run `npm install && npm start` inside `backend`.
+4. Open the GitHub Pages site. For local API use, set `config.js` to `http://localhost:3000`.
 
-## Render deployment
+## Render setup
 
-The API URL configured in `config.js` expects the Render web service URL `https://al-business-agent-api-albusiness.onrender.com`. Confirm that this is the actual Render service URL; if it differs, update `config.js`. Set `AI_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, and `ALLOWED_ORIGINS` in Render environment settings. The browser must use the exact site origin in `ALLOWED_ORIGINS`.
+The repo's `render.yaml` declares a web service. Create/update the Render service from the Blueprint. Set `AI_API_KEY`, `AI_MODEL`, and `E2B_API_KEY` in Render environment settings; keep them out of GitHub. Verify the actual Render service URL and set it in `config.js`. Set `ALLOWED_ORIGINS` to the exact GitHub Pages origin. Check `/health` and `/api/health` after deploy.
 
-Check `GET /health` and `GET /api/health`. A working API still requires a valid AI provider key and model for project generation. Never place provider keys in frontend files.
-
-## Endpoints
+## API
 
 - `GET /health`
 - `GET /api/health`
-- `POST /api/chat` or `/api/agents/run`: enqueue agent discussion task
+- `POST /api/chat` and `/api/agents/run`: enqueue agent discussion task
 - `GET /api/agents/jobs/:id`: poll in-memory task status
-- `POST /api/agent/build`: generate up to 8 allowlisted text files
+- `POST /api/agent/build`: generate and validate a limited project file set
 
-The MVP job queue is in memory and is lost on backend restart. Generated code is not executed. Review generated files before use. CORS/rate limiting are not user authentication; add authentication and durable storage before public production use.
+## Limits and production requirements
+
+The job queue is in memory and lost on restart. Generated files are returned to the browser and are not written into a repository. The sandbox currently performs syntax checks only; that is not a full test run or proof the project works. Without `E2B_API_KEY`, generation still works if the AI provider is configured, but sandbox validation is skipped. Use persistent job storage, authenticated users, per-user quotas, audit logs, stronger abuse controls, and a reviewed sandbox policy before public production use.
