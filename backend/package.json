@@ -2,6 +2,7 @@
   "name": "al-business-agent-backend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Backend API for Al Business multi-agent assistant",
   "main": "server.js",
   "scripts": {
