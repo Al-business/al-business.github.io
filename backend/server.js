@@ -3,6 +3,8 @@ import cors from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { Sandbox } from "e2b";
+import fs from "node:fs/promises";
+import path from "node:path";
 import "dotenv/config";
 
 const app = express();
@@ -14,6 +16,7 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://al-business.gith
   .filter(Boolean);
 const maxTokens = Math.max(128, Math.min(Number(process.env.AI_MAX_TOKENS || 1400), 4000));
 const timeoutMs = Math.max(5000, Math.min(Number(process.env.AI_TIMEOUT_MS || 60000), 120000));
+const repoRoot = path.resolve(process.env.REPO_WRITE_DIR || path.resolve(process.cwd(), ".."));
 
 app.disable("x-powered-by");
 app.use(helmet());
@@ -38,9 +41,6 @@ const agents = [
   { name: "QA", role: "Keyfiyyət təminatı", instruction: "Risklər, test ssenariləri, qəbul meyarları və kənar halları müəyyən et." },
   { name: "DEPLOY", role: "Buraxılış mütəxəssisi", instruction: "Buraxılış, yoxlama və rollback addımlarını yaz; heç vaxt real deploy etməyi iddia etme." },
 ];
-
-const jobs = new Map();
-let nextJobId = 1;
 
 function validateConfig() {
   if (!process.env.AI_API_KEY || process.env.AI_API_KEY === "replace_with_provider_key") {
@@ -192,7 +192,7 @@ function normalizeProjectFiles(files) {
 
 async function validateInSandbox(files) {
   if (!process.env.E2B_API_KEY) {
-    return { status: "not-configured", note: "E2B_API_KEY yokdur; sandbox yoxlaması keçməyib.", checks: [] };
+    return { status: "not-configured", note: "E2B_API_KEY yoxdur; sandbox yoxlaması keçməyib.", checks: [] };
   }
 
   let sandbox;
@@ -258,6 +258,33 @@ async function buildProject(message) {
   };
 }
 
+function ensureRepoWriteEnabled() {
+  if (process.env.ALLOW_REPO_WRITE !== "true") {
+    throw Object.assign(new Error("Repo write is disabled. Set ALLOW_REPO_WRITE=true and REPO_WRITE_DIR to the repo root."), { status: 403 });
+  }
+}
+
+function resolveRepoFilePath(filePath) {
+  const target = path.resolve(repoRoot, filePath);
+  const relative = path.relative(repoRoot, target);
+  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw Object.assign(new Error(`Unsafe repo write path: ${filePath}`), { status: 400 });
+  }
+  return target;
+}
+
+async function writeProjectFilesToRepo(fileList) {
+  ensureRepoWriteEnabled();
+  const written = [];
+  for (const file of normalizeProjectFiles(fileList)) {
+    const absolutePath = resolveRepoFilePath(file.path);
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+    await fs.writeFile(absolutePath, file.content, "utf8");
+    written.push({ path: file.path, absolutePath });
+  }
+  return written;
+}
+
 const jobs = new Map();
 let nextJobId = 1;
 
@@ -277,7 +304,7 @@ async function processJob(jobId) {
     job.completedAt = new Date().toISOString();
   } catch (error) {
     job.status = "failed";
-    job.lastError = error.message || "Agent takkı başarısız oldu.";
+    job.lastError = error.message || "Agent tapşırığı uğursuz oldu.";
     job.completedAt = new Date().toISOString();
   }
 
@@ -325,6 +352,8 @@ app.get("/api/health", (_req, res) => {
     status: "ok",
     aiConfigured: Boolean(process.env.AI_API_KEY && process.env.AI_BASE_URL && process.env.AI_MODEL),
     e2bConfigured: Boolean(process.env.E2B_API_KEY),
+    repoWriteEnabled: process.env.ALLOW_REPO_WRITE === "true",
+    repoRoot,
     queuedJobs: [...jobs.values()].filter((job) => job.status === "queued").length,
   });
 });
@@ -378,6 +407,25 @@ app.post("/api/agent/build", async (req, res, next) => {
   }
 });
 
+app.post("/api/agent/write", async (req, res, next) => {
+  try {
+    const approved = req.body?.approved === true;
+    const files = req.body?.files;
+    if (!approved) {
+      return res.status(400).json({ error: "Repo yazmaq üçün approved: true göndərilməlidir." });
+    }
+    const written = await writeProjectFilesToRepo(files || []);
+    return res.json({
+      ok: true,
+      repoRoot,
+      written,
+      message: "Fayllar repoya yazıldı. Commit etməzdən əvvəl nəzərdən keçirin.",
+    });
+  } catch (error) {
+    return next(error);
+  }
+});
+
 app.use((error, _req, res, _next) => {
   if (error.message === "Origin is not allowed by CORS") {
     return res.status(403).json({ error: "Bu saytın API-yə qoşulmasına icazə verilməyib." });
@@ -397,192 +445,3 @@ app.listen(port, host, () => {
 });
 
 export default app;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
