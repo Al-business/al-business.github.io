@@ -9,86 +9,107 @@ document.addEventListener("DOMContentLoaded", () => {
       const open = nav.classList.toggle("open");
       navToggle.setAttribute("aria-expanded", String(open));
     });
-    nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
-      nav.classList.remove("open");
-      navToggle.setAttribute("aria-expanded", "false");
-    }));
+
+    nav.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        nav.classList.remove("open");
+        navToggle.setAttribute("aria-expanded", "false");
+      });
+    });
   }
 
   const taskInput = document.getElementById("taskInput");
-  const launch = document.getElementById("launchBtn");
-  const reset = document.getElementById("resetBtn");
-  const runHero = document.getElementById("runWorkflowBtn");
-  const log = document.querySelector(".log-panel");
-  const apiBase = (window.AL_BUSINESS_API_URL || "").trim().replace(/\/+$/, "");
+  const runBtn = document.getElementById("runWorkflowBtn");
+  const launchBtn = document.getElementById("launchBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const logPanel = document.querySelector(".log-panel");
+  const apiBase = (window.AL_BUSINESS_API_URL || "http://localhost:3000").replace(/\/+$/, "");
 
-  function addLog(agent, text) {
-    if (!log) return;
-    const row = document.createElement("div");
-    row.className = "log-entry";
-    const time = document.createElement("span");
-    time.className = "time";
-    time.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    const name = document.createElement("span");
-    name.className = "agent-name";
-    name.textContent = agent;
-    const message = document.createElement("span");
-    message.className = "log-message";
-    message.textContent = text;
-    row.append(time, name, message);
-    log.prepend(row);
-  }
+  const appendLog = (agent, message) => {
+    if (!logPanel) return;
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    entry.innerHTML = `
+      <span class="time">${time}</span>
+      <span class="agent-name">${agent}</span>
+      <span class="log-message">${message}</span>
+    `;
+    logPanel.prepend(entry);
+  };
 
-  async function submitTask() {
-    const message = taskInput?.value.trim();
-    if (!message) return taskInput?.focus();
-    if (!apiBase) return addLog("XƏTA", "Backend ünvanı qurulmayıb. Real agentlər işləyə bilməz.");
-    launch.disabled = true;
-    addLog("SYSTEM", "Tapşırıq davamlı növbəyə yazılır...");
-    try {
-      const response = await fetch(`${apiBase}/api/agents/run`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message })
-      });
+  async function pollJob(jobId) {
+    while (true) {
+      const response = await fetch(`${apiBase}/api/agents/jobs/${jobId}`);
       const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || `API xətası (${response.status})`);
-      addLog("SYSTEM", `Tapşırıq #${data.id} növbəyə yazıldı; agent nəticələri gözlənilir.`);
-      let done = false;
-      while (!done) {
-        await new Promise((resolve) => setTimeout(resolve, 2000));
-        const poll = await fetch(`${apiBase}/api/agents/jobs/${encodeURIComponent(data.id)}`);
-        const state = await poll.json().catch(() => ({}));
-        if (!poll.ok) throw new Error(state.error || `Status sorğusu xətası (${poll.status})`);
-        (state.agents || []).forEach((agent) => {
-          const key = `${data.id}:${agent.name}`;
-          if (!window.__seenAgentResults) window.__seenAgentResults = new Set();
-          if (!window.__seenAgentResults.has(key)) {
-            window.__seenAgentResults.add(key);
-            addLog(agent.name, agent.reply);
-          }
-        });
-        if (state.status === "completed") {
-          addLog("SYSTEM", `Tapşırıq #${data.id} tamamlandı.`);
-          done = true;
-        } else if (state.status === "failed") {
-          addLog("XƏTA", `Tapşırıq #${data.id} dayandı: ${state.last_error || "təkrar cəhd limiti bitdi"}`);
-          done = true;
-        }
+      if (!response.ok) {
+        throw new Error(data.error || `Job status request failed (${response.status})`);
       }
-    } catch (error) {
-      addLog("XƏTA", error.message || "Backend bağlantısı alınmadı.");
-    } finally {
-      launch.disabled = false;
+
+      if (Array.isArray(data.agents) && data.agents.length) {
+        data.agents.forEach((agent) => {
+          appendLog(agent.name, agent.reply);
+        });
+      }
+
+      if (data.status === "completed") {
+        appendLog("SYSTEM", `Task #${jobId} completed successfully.`);
+        return;
+      }
+
+      if (data.status === "failed") {
+        appendLog("SYSTEM", `Task #${jobId} failed: ${data.lastError || "Unknown error"}`);
+        return;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
   }
 
-  launch?.addEventListener("click", submitTask);
-  runHero?.addEventListener("click", () => {
-    document.getElementById("workflow")?.scrollIntoView({ behavior: "smooth" });
-    taskInput?.focus();
-  });
-  reset?.addEventListener("click", () => {
-    if (taskInput) taskInput.value = "";
-    if (log) log.replaceChildren();
-    taskInput?.focus();
-  });
+  async function runAgentWorkflow() {
+    if (!taskInput) return;
+    const message = taskInput.value.trim();
+    if (!message) {
+      taskInput.focus();
+      return;
+    }
+
+    appendLog("SYSTEM", "Sending task to the agent worker...");
+
+    try {
+      const response = await fetch(`${apiBase}/api/agents/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error || `Server error (${response.status})`);
+      }
+
+      appendLog("SYSTEM", `Task queued with ID #${data.id}. Waiting for worker results...`);
+      await pollJob(data.id);
+    } catch (error) {
+      appendLog("ERROR", error.message || "Agent API failed.");
+    }
+  }
+
+  if (runBtn) runBtn.addEventListener("click", runAgentWorkflow);
+  if (launchBtn) launchBtn.addEventListener("click", runAgentWorkflow);
+
+  if (resetBtn && taskInput) {
+    resetBtn.addEventListener("click", () => {
+      taskInput.value = "Build a modern e-commerce platform with a FastAPI backend, user and product tables, and Docker deployment.";
+      if (logPanel) {
+        logPanel.innerHTML = `
+          <div class="log-entry">
+            <span class="time">--:--</span>
+            <span class="agent-name">SYSTEM</span>
+            <span class="log-message">Workflow reset and waiting for a new task.</span>
+          </div>
+        `;
+      }
+    });
+  }
 });
