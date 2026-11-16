@@ -1,1 +1,1 @@
-window.AL_BUSINESS_API_URL = "http://localhost:3000";
+window.AL_BUSINESS_API_URL = "https://al-business-agent-api-albusiness.onrender.com";
