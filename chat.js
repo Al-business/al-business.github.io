@@ -6,15 +6,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const messages = document.getElementById("robotChatMessages");
   const status = document.getElementById("robotChatStatus");
   const send = document.getElementById("robotChatSend");
+  const apiBase = (window.AL_BUSINESS_API_URL || "").trim().replace(/\/+$/, "");
 
-  if (toggle && panel) {
-    toggle.addEventListener("click", () => {
-      const open = panel.hidden;
-      panel.hidden = !open;
-      toggle.setAttribute("aria-expanded", String(open));
-      if (open) input?.focus();
-    });
-  }
+  toggle?.addEventListener("click", () => {
+    const open = panel.hidden;
+    panel.hidden = !open;
+    toggle.setAttribute("aria-expanded", String(open));
+    if (open) input?.focus();
+  });
 
   function addMessage(label, text, isUser = false) {
     const item = document.createElement("div");
@@ -29,6 +28,33 @@ document.addEventListener("DOMContentLoaded", () => {
     item.scrollIntoView({ block: "nearest" });
   }
 
+  async function pollJob(id) {
+    while (true) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const response = await fetch(`${apiBase}/api/agents/jobs/${encodeURIComponent(id)}`);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `Status xətası (${response.status}).`);
+      if (Array.isArray(data.agents)) {
+        data.agents.forEach((agent) => {
+          const key = `${id}:${agent.name}`;
+          if (!window.__chatSeenResults) window.__chatSeenResults = new Set();
+          if (!window.__chatSeenResults.has(key)) {
+            window.__chatSeenResults.add(key);
+            addMessage(`${agent.name} · ${agent.role}`, agent.reply);
+          }
+        });
+      }
+      if (data.status === "completed") {
+        status.textContent = `Tapşırıq #${id} tamamlandı; ${data.agents.length} agent cavab verdi.`;
+        return;
+      }
+      if (data.status === "failed") throw new Error(data.last_error || "Agent tapşırığı retry limitinə çatdı.");
+      status.textContent = data.status === "running"
+        ? `Tapşırıq #${id} icradadır (${data.attempts} cəhd)...`
+        : `Tapşırıq #${id} növbədədir.`;
+    }
+  }
+
   if (!form || !input || !messages) return;
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -37,36 +63,25 @@ document.addEventListener("DOMContentLoaded", () => {
     addMessage("SİZ", message, true);
     input.value = "";
 
-    const apiBase = (window.AL_BUSINESS_API_URL || "").trim().replace(/\/+$/, "");
     if (!apiBase) {
-      const error = "Backend qoşulmayıb. Real cavab üçün əvvəlcə Render-də API servisini deploy edib config.js-ə onun HTTPS URL-sini yazmaq lazımdır.";
-      addMessage("BAĞLANTI XƏTASI", error);
+      addMessage("BAĞLANTI XƏTASI", "Backend URL təyin edilməyib; real agent tapşırığı göndərilə bilmədi.");
       status.textContent = "Real agentlərə qoşulmayıb.";
       return;
     }
 
     send.disabled = true;
-    status.textContent = "Agentlər cavab hazırlayır...";
+    status.textContent = "Tapşırıq davamlı agent növbəsinə göndərilir...";
     try {
       const response = await fetch(`${apiBase}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message })
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message })
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || `Server xətası (${response.status}).`);
-      if (Array.isArray(data.agents) && data.agents.length) {
-        data.agents.forEach((agent) => addMessage(`${agent.name} · ${agent.role}`, agent.reply));
-        if (data.failedAgents?.length) addMessage("XƏBƏRDARLIQ", `Cavab verməyən agentlər: ${data.failedAgents.join(", ")}`);
-      } else if (typeof data.reply === "string" && data.reply.trim()) {
-        addMessage("AGENTLƏR", data.reply);
-      } else {
-        throw new Error("Backend-dən düzgün cavab alınmadı.");
-      }
-      status.textContent = "Agent cavabları alındı.";
+      status.textContent = `Tapşırıq #${data.id} növbəyə yazıldı.`;
+      await pollJob(data.id);
     } catch (error) {
-      addMessage("BAĞLANTI XƏTASI", error.message || "Backend-ə qoşulmaq mümkün olmadı.");
-      status.textContent = "Sorğu alınmadı; server bağlantısını yoxlayın.";
+      addMessage("BAĞLANTI / İCRA XƏTASI", error.message || "Backend-ə qoşulmaq mümkün olmadı.");
+      status.textContent = "Tapşırıq tamamlanmadı; status serverdə saxlanılır və dəstək varsa retry ediləcək.";
     } finally {
       send.disabled = false;
       input.focus();

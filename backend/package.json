@@ -1,9 +1,9 @@
 {
   "name": "al-business-agent-backend",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "Backend API for Al Business multi-agent assistant",
+  "description": "Durable multi-agent API and recoverable worker for Al Business",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,6 +15,7 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
-    "helmet": "^8.0.0"
+    "helmet": "^8.0.0",
+    "pg": "^8.13.1"
   }
 }

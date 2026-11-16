@@ -1,251 +1,94 @@
-<!DOCTYPE html>
-<html lang="tr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Multi-Agent AI Studio dashboard" />
-    <title>Multi-Agent AI Studio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <header class="site-header">
-      <div class="container nav-wrap">
-        <a href="index.html" class="brand" aria-label="Ana sayfa">
-          <span class="brand-mark">M</span>
-          <span>Multi-Agent</span>
-        </a>
+document.addEventListener("DOMContentLoaded", () => {
+  const yearEl = document.getElementById("year");
+  if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-        <button class="nav-toggle" aria-label="Menüyü aç" aria-expanded="false">
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
+  const navToggle = document.querySelector(".nav-toggle");
+  const nav = document.querySelector(".site-nav");
+  if (navToggle && nav) {
+    navToggle.addEventListener("click", () => {
+      const open = nav.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", String(open));
+    });
+    nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => {
+      nav.classList.remove("open");
+      navToggle.setAttribute("aria-expanded", "false");
+    }));
+  }
 
-        <nav class="site-nav" aria-label="Ana menü">
-          <a href="#overview" class="active">Önizleme</a>
-          <a href="#agents">Ajanlar</a>
-          <a href="#workflow">İş Akışı</a>
-          <a href="#logs">Loglar</a>
-        </nav>
-      </div>
-    </header>
+  const taskInput = document.getElementById("taskInput");
+  const launch = document.getElementById("launchBtn");
+  const reset = document.getElementById("resetBtn");
+  const runHero = document.getElementById("runWorkflowBtn");
+  const log = document.querySelector(".log-panel");
+  const apiBase = (window.AL_BUSINESS_API_URL || "").trim().replace(/\/+$/, "");
 
-    <main>
-      <section class="hero" id="overview">
-        <div class="container hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">AI Orchestration Center</p>
-            <h1>Çox-agentli sisteminizi bir panel üzerinden yönetin.</h1>
-            <p class="lead">
-              CEO, Coder, DB, DevOps, QA ve Deployer agentleri aynı anda çalışır,
-              süreçler otomatik koordine edilir ve sonuçlar canlı olarak izlenir.
-            </p>
-            <div class="hero-actions">
-              <button class="btn btn-primary" id="runWorkflowBtn">İş Akışını Başlat</button>
-              <a class="btn btn-secondary" href="#agents">Ajanları Gör</a>
-            </div>
-            <ul class="hero-points">
-              <li>Otomatik planlama</li>
-              <li>İşbirlikçi ajanlar</li>
-              <li>Canlı deployment</li>
-            </ul>
-          </div>
+  function addLog(agent, text) {
+    if (!log) return;
+    const row = document.createElement("div");
+    row.className = "log-entry";
+    const time = document.createElement("span");
+    time.className = "time";
+    time.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const name = document.createElement("span");
+    name.className = "agent-name";
+    name.textContent = agent;
+    const message = document.createElement("span");
+    message.className = "log-message";
+    message.textContent = text;
+    row.append(time, name, message);
+    log.prepend(row);
+  }
 
-          <div class="hero-card">
-            <div class="mini-panel status-panel">
-              <span class="tag">Sistem Durumu</span>
-              <h2>Online</h2>
-              <p>6 ajan aktif • 1 iş akışı hazır</p>
-            </div>
+  async function submitTask() {
+    const message = taskInput?.value.trim();
+    if (!message) return taskInput?.focus();
+    if (!apiBase) return addLog("XƏTA", "Backend ünvanı qurulmayıb. Real agentlər işləyə bilməz.");
+    launch.disabled = true;
+    addLog("SYSTEM", "Tapşırıq davamlı növbəyə yazılır...");
+    try {
+      const response = await fetch(`${apiBase}/api/agents/run`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ message })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `API xətası (${response.status})`);
+      addLog("SYSTEM", `Tapşırıq #${data.id} növbəyə yazıldı; agent nəticələri gözlənilir.`);
+      let done = false;
+      while (!done) {
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        const poll = await fetch(`${apiBase}/api/agents/jobs/${encodeURIComponent(data.id)}`);
+        const state = await poll.json().catch(() => ({}));
+        if (!poll.ok) throw new Error(state.error || `Status sorğusu xətası (${poll.status})`);
+        (state.agents || []).forEach((agent) => {
+          const key = `${data.id}:${agent.name}`;
+          if (!window.__seenAgentResults) window.__seenAgentResults = new Set();
+          if (!window.__seenAgentResults.has(key)) {
+            window.__seenAgentResults.add(key);
+            addLog(agent.name, agent.reply);
+          }
+        });
+        if (state.status === "completed") {
+          addLog("SYSTEM", `Tapşırıq #${data.id} tamamlandı.`);
+          done = true;
+        } else if (state.status === "failed") {
+          addLog("XƏTA", `Tapşırıq #${data.id} dayandı: ${state.last_error || "təkrar cəhd limiti bitdi"}`);
+          done = true;
+        }
+      }
+    } catch (error) {
+      addLog("XƏTA", error.message || "Backend bağlantısı alınmadı.");
+    } finally {
+      launch.disabled = false;
+    }
+  }
 
-            <div class="metric-grid">
-              <div>
-                <strong>06</strong>
-                <span>Ajan</span>
-              </div>
-              <div>
-                <strong>99.2%</strong>
-                <span>Sağlamlık</span>
-              </div>
-              <div>
-                <strong>14s</strong>
-                <span>Ortalama</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="agents">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow">Agent Takımı</p>
-            <h2>İşleyişin her katmanı</h2>
-          </div>
-
-          <div class="agent-grid">
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">CEO</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Baş Arşiv</h3>
-              <p>İhtiyacı analiz eder, stratejik yapı ve planı hazırlar.</p>
-            </article>
-
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">CODER</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Yazılım Üretici</h3>
-              <p>Backend/frontend kod yapısını otomatik üretir.</p>
-            </article>
-
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">DB</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Veri Mimarisi</h3>
-              <p>PostgreSQL / SQL / MongoDB şemalarını tanımlar.</p>
-            </article>
-
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">DEVOPS</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Docker Uzmanı</h3>
-              <p>Dockerfile, compose ve deployment süreçlerini hazırlar.</p>
-            </article>
-
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">QA</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Kalite Kontrol</h3>
-              <p>Uygulama hatalarını kontrol eder, geribildirim verir.</p>
-            </article>
-
-            <article class="agent-card online">
-              <div class="agent-header">
-                <span class="agent-badge">DEPLOY</span>
-                <span class="status-dot"></span>
-              </div>
-              <h3>Yayımcı</h3>
-              <p>Yazılımı projeye yazıp GitHub’a gönderir.</p>
-            </article>
-          </div>
-        </div>
-      </section>
-
-      <section class="section workflow-section" id="workflow">
-        <div class="container workflow-grid">
-          <div class="panel">
-            <div class="section-heading left">
-              <p class="eyebrow">İş Akışı</p>
-              <h2>Otomasyon komutu</h2>
-            </div>
-
-            <label class="input-label" for="taskInput">İş tanımı</label>
-            <textarea id="taskInput" rows="6">Alibaba tarzı e-ticaret platformu kur: FastAPI backend, ürün ve kullanıcı tabloları, Dockerfile ve docker-compose.yml.</textarea>
-
-            <div class="action-row">
-              <button class="btn btn-primary" id="launchBtn">Çalıştır</button>
-              <button class="btn btn-secondary" id="resetBtn">Sıfırla</button>
-              <button class="btn btn-secondary" id="autonomousModeBtn" type="button">Avtonom Rejim</button>
-            </div>
-            <div id="autonomousStatus" class="autonomous-status" aria-live="polite">Avtonom mod: pasif</div>
-          </div>
-
-          <div class="panel output-panel">
-            <div class="section-heading left">
-              <p class="eyebrow">Çıktı</p>
-              <h2>Plan özeti</h2>
-            </div>
-
-            <ul class="output-list">
-              <li><span class="check">✓</span> CEO: strateji ve dosya planı hazır.</li>
-              <li><span class="check">✓</span> Coder: FastAPI tabanlı backend üretildi.</li>
-              <li><span class="check">✓</span> DB: ürün ve kullanıcı şemaları planlandı.</li>
-              <li><span class="check">✓</span> DevOps: Docker konfigürasyonu hazır.</li>
-              <li><span class="check">✓</span> QA: otomatik doğrulama başlatıldı.</li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      <section class="section" id="logs">
-        <div class="container">
-          <div class="section-heading">
-            <p class="eyebrow">Canlı Log</p>
-            <h2>İşlem akışı</h2>
-          </div>
-
-          <div class="log-panel" aria-live="polite">
-            <div class="log-entry">
-              <span class="time">09:41</span>
-              <span class="agent-name">CEO</span>
-              <span class="log-message">İş gereksinimleri analiz edildi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:42</span>
-              <span class="agent-name">CODER</span>
-              <span class="log-message">FastAPI iskeleti üretildi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:43</span>
-              <span class="agent-name">DB</span>
-              <span class="log-message">Ürün ve kullanıcı tabloları hazırlandı.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:44</span>
-              <span class="agent-name">DEVOPS</span>
-              <span class="log-message">Dockerfile ve compose güncellendi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:45</span>
-              <span class="agent-name">QA</span>
-              <span class="log-message">İçerik doğrulaması başarıyla tamamlandı.</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-
-    <footer class="site-footer">
-      <div class="container footer-grid">
-        <div>
-          <a href="index.html" class="brand footer-brand">
-            <span class="brand-mark">M</span>
-            <span>Multi-Agent</span>
-          </a>
-          <p>Otomasyon, kod üretimi ve deploy sürecini tek panelden yönetir.</p>
-        </div>
-
-        <div>
-          <h3>İletişim</h3>
-          <ul>
-            <li>Email: hello@multiagent.example</li>
-            <li>Telefon: +90 555 123 45 67</li>
-            <li>İstanbul, Türkiye</li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="container footer-bottom">
-        <p>© <span id="year"></span> Multi-Agent Studio</p>
-      </div>
-    </footer>
-
-    <script src="script.js"></script>
-  </body>
-</html>
+  launch?.addEventListener("click", submitTask);
+  runHero?.addEventListener("click", () => {
+    document.getElementById("workflow")?.scrollIntoView({ behavior: "smooth" });
+    taskInput?.focus();
+  });
+  reset?.addEventListener("click", () => {
+    if (taskInput) taskInput.value = "";
+    if (log) log.replaceChildren();
+    taskInput?.focus();
+  });
+});
