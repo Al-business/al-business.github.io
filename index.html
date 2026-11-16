@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="az">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Multi-Agent AI Studio dashboard" />
-    <title>Multi-Agent AI Studio</title>
+    <meta name="description" content="Al Business çox-agentli AI Studio idarəetmə paneli." />
+    <title>Al Business | Multi-Agent Studio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,22 +16,23 @@
   <body>
     <header class="site-header">
       <div class="container nav-wrap">
-        <a href="index.html" class="brand" aria-label="Ana sayfa">
-          <span class="brand-mark">M</span>
-          <span>Multi-Agent</span>
+        <a href="index.html" class="brand" aria-label="Ana səhifə">
+          <span class="brand-mark">A</span>
+          <span>Al Business</span>
         </a>
 
-        <button class="nav-toggle" aria-label="Menüyü aç" aria-expanded="false">
+        <button class="nav-toggle" aria-label="Menyunu aç" aria-expanded="false">
           <span></span>
           <span></span>
           <span></span>
         </button>
 
-        <nav class="site-nav" aria-label="Ana menü">
-          <a href="#overview" class="active">Önizleme</a>
-          <a href="#agents">Ajanlar</a>
-          <a href="#workflow">İş Akışı</a>
-          <a href="#logs">Loglar</a>
+        <nav class="site-nav" aria-label="Əsas menyu">
+          <a href="#overview" class="active">İcmal</a>
+          <a href="#agents">Agentlər</a>
+          <a href="#workflow">İş axını</a>
+          <a href="#chat">Çat</a>
+          <a href="#logs">Qeydlər</a>
         </nav>
       </div>
     </header>
@@ -41,41 +42,41 @@
         <div class="container hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">AI Orchestration Center</p>
-            <h1>Çox-agentli sisteminizi bir panel üzerinden yönetin.</h1>
+            <h1>Çox-agentli sisteminizi bir paneldən idarə edin.</h1>
             <p class="lead">
-              CEO, Coder, DB, DevOps, QA ve Deployer agentleri aynı anda çalışır,
-              süreçler otomatik koordine edilir ve sonuçlar canlı olarak izlenir.
+              CEO, Coder, DB, DevOps, QA və Deploy agent rollarını bir paneldə izləyin.
+              Bu GitHub Pages versiyasında əməliyyatlar demo rejimində göstərilir.
             </p>
             <div class="hero-actions">
-              <button class="btn btn-primary" id="runWorkflowBtn">İş Akışını Başlat</button>
-              <a class="btn btn-secondary" href="#agents">Ajanları Gör</a>
+              <a class="btn btn-primary" href="#workflow">Demo iş axınını başladın</a>
+              <a class="btn btn-secondary" href="#agents">6 agent roluna baxın</a>
             </div>
             <ul class="hero-points">
-              <li>Otomatik planlama</li>
-              <li>İşbirlikçi ajanlar</li>
-              <li>Canlı deployment</li>
+              <li>İş axınının demo görüntüsü</li>
+              <li>6 agent rolu</li>
+              <li>Çat interfeysi</li>
             </ul>
           </div>
 
           <div class="hero-card">
             <div class="mini-panel status-panel">
-              <span class="tag">Sistem Durumu</span>
-              <h2>Online</h2>
-              <p>6 ajan aktif • 1 iş akışı hazır</p>
+              <span class="tag">Sistem statusu</span>
+              <h2>Demo rejimi</h2>
+              <p>Agent backend-i qoşulmayıb • 6 rol nümayiş olunur</p>
             </div>
 
             <div class="metric-grid">
               <div>
                 <strong>06</strong>
-                <span>Ajan</span>
+                <span>Agent rolu</span>
               </div>
               <div>
-                <strong>99.2%</strong>
-                <span>Sağlamlık</span>
+                <strong>Demo</strong>
+                <span>İşləmə statusu</span>
               </div>
               <div>
-                <strong>14s</strong>
-                <span>Ortalama</span>
+                <strong>—</strong>
+                <span>Real uptime</span>
               </div>
             </div>
           </div>
@@ -85,63 +86,63 @@
       <section class="section" id="agents">
         <div class="container">
           <div class="section-heading">
-            <p class="eyebrow">Agent Takımı</p>
-            <h2>İşleyişin her katmanı</h2>
+            <p class="eyebrow">Agent komandası</p>
+            <h2>İşin hər mərhələsi üçün 6 rol</h2>
           </div>
 
           <div class="agent-grid">
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">CEO</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Baş Arşiv</h3>
-              <p>İhtiyacı analiz eder, stratejik yapı ve planı hazırlar.</p>
+              <h3>Strategiya rəhbəri</h3>
+              <p>Tələbi təhlil edir, məqsəd və icra planı hazırlayır.</p>
             </article>
 
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">CODER</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Yazılım Üretici</h3>
-              <p>Backend/frontend kod yapısını otomatik üretir.</p>
+              <h3>Proqram təminatı mühəndisi</h3>
+              <p>Backend və frontend üçün kod həlləri hazırlayır.</p>
             </article>
 
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">DB</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Veri Mimarisi</h3>
-              <p>PostgreSQL / SQL / MongoDB şemalarını tanımlar.</p>
+              <h3>Məlumat arxitektoru</h3>
+              <p>Verilənlər bazasının modelini və sxemini planlaşdırır.</p>
             </article>
 
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">DEVOPS</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Docker Uzmanı</h3>
-              <p>Dockerfile, compose ve deployment süreçlerini hazırlar.</p>
+              <h3>DevOps mühəndisi</h3>
+              <p>Docker və yerləşdirmə konfiqurasiyalarını hazırlayır.</p>
             </article>
 
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">QA</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Kalite Kontrol</h3>
-              <p>Uygulama hatalarını kontrol eder, geribildirim verir.</p>
+              <h3>Keyfiyyət təminatı</h3>
+              <p>Test planını və yoxlama meyarlarını müəyyənləşdirir.</p>
             </article>
 
-            <article class="agent-card online">
+            <article class="agent-card">
               <div class="agent-header">
                 <span class="agent-badge">DEPLOY</span>
-                <span class="status-dot"></span>
+                <span class="status-dot demo-dot" aria-label="Demo rol"></span>
               </div>
-              <h3>Yayımcı</h3>
-              <p>Yazılımı projeye yazıp GitHub’a gönderir.</p>
+              <h3>Yerləşdirmə mütəxəssisi</h3>
+              <p>Buraxılış və yerləşdirmə addımlarını planlaşdırır.</p>
             </article>
           </div>
         </div>
@@ -151,32 +152,59 @@
         <div class="container workflow-grid">
           <div class="panel">
             <div class="section-heading left">
-              <p class="eyebrow">İş Akışı</p>
-              <h2>Otomasyon komutu</h2>
+              <p class="eyebrow">Demo iş axını</p>
+              <h2>Tapşırıq təsviri</h2>
             </div>
 
-            <label class="input-label" for="taskInput">İş tanımı</label>
-            <textarea id="taskInput" rows="6">Alibaba tarzı e-ticaret platformu kur: FastAPI backend, ürün ve kullanıcı tabloları, Dockerfile ve docker-compose.yml.</textarea>
+            <label class="input-label" for="taskInput">Tapşırığınız</label>
+            <textarea id="taskInput" rows="6">Alibaba üslubunda e-ticarət platforması üçün FastAPI backend, məhsul və istifadəçi cədvəlləri, Dockerfile və docker-compose.yml planlaşdır.</textarea>
 
             <div class="action-row">
-              <button class="btn btn-primary" id="launchBtn">Çalıştır</button>
+              <button class="btn btn-primary" id="launchBtn">Demo axını göstər</button>
               <button class="btn btn-secondary" id="resetBtn">Sıfırla</button>
             </div>
+            <p class="demo-note">Bu statik səhifə agentləri real işə salmır. Real icra üçün backend/API inteqrasiyası tələb olunur.</p>
           </div>
 
           <div class="panel output-panel">
             <div class="section-heading left">
-              <p class="eyebrow">Çıktı</p>
-              <h2>Plan özeti</h2>
+              <p class="eyebrow">Nümunə nəticə</p>
+              <h2>Plan xülasəsi</h2>
             </div>
 
             <ul class="output-list">
-              <li><span class="check">✓</span> CEO: strateji ve dosya planı hazır.</li>
-              <li><span class="check">✓</span> Coder: FastAPI tabanlı backend üretildi.</li>
-              <li><span class="check">✓</span> DB: ürün ve kullanıcı şemaları planlandı.</li>
-              <li><span class="check">✓</span> DevOps: Docker konfigürasyonu hazır.</li>
-              <li><span class="check">✓</span> QA: otomatik doğrulama başlatıldı.</li>
+              <li><span class="check">✓</span> CEO: məqsəd və icra planı</li>
+              <li><span class="check">✓</span> Coder: backend/frontend tapşırıqları</li>
+              <li><span class="check">✓</span> DB: verilənlər modeli</li>
+              <li><span class="check">✓</span> DevOps: yerləşdirmə planı</li>
+              <li><span class="check">✓</span> QA: yoxlama siyahısı</li>
+              <li><span class="check">✓</span> Deploy: buraxılış addımları</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="chat">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">Çat</p>
+            <h2>Tapşırığınız barədə danışın</h2>
+          </div>
+          <div class="panel chat-panel">
+            <div class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions">
+              <div class="chat-message assistant-message">
+                <span class="agent-name">ASSISTANT</span>
+                <p>Salam! Tapşırığınızı yazın. Hazırda çat demo rejimindədir; real AI cavabları üçün backend/API qoşulmalıdır.</p>
+              </div>
+            </div>
+            <form id="chatForm" class="chat-form">
+              <label class="input-label" for="chatInput">Mesajınız</label>
+              <textarea id="chatInput" rows="3" maxlength="2000" placeholder="Məsələn: Onlayn mağaza üçün ilkin plan hazırla..." required></textarea>
+              <div class="action-row">
+                <button class="btn btn-primary" id="sendChatBtn" type="submit">Göndər</button>
+              </div>
+              <p class="demo-note" id="chatStatus">Demo çat aktivdir. Server tərəfli AI qoşulmayıb.</p>
+            </form>
           </div>
         </div>
       </section>
@@ -184,35 +212,15 @@
       <section class="section" id="logs">
         <div class="container">
           <div class="section-heading">
-            <p class="eyebrow">Canlı Log</p>
-            <h2>İşlem akışı</h2>
+            <p class="eyebrow">Demo qeydləri</p>
+            <h2>İş axını nümunəsi</h2>
           </div>
 
           <div class="log-panel" aria-live="polite">
             <div class="log-entry">
-              <span class="time">09:41</span>
-              <span class="agent-name">CEO</span>
-              <span class="log-message">İş gereksinimleri analiz edildi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:42</span>
-              <span class="agent-name">CODER</span>
-              <span class="log-message">FastAPI iskeleti üretildi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:43</span>
-              <span class="agent-name">DB</span>
-              <span class="log-message">Ürün ve kullanıcı tabloları hazırlandı.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:44</span>
-              <span class="agent-name">DEVOPS</span>
-              <span class="log-message">Dockerfile ve compose güncellendi.</span>
-            </div>
-            <div class="log-entry">
-              <span class="time">09:45</span>
-              <span class="agent-name">QA</span>
-              <span class="log-message">İçerik doğrulaması başarıyla tamamlandı.</span>
+              <span class="time">—</span>
+              <span class="agent-name">SYSTEM</span>
+              <span class="log-message">Bu panel nümunə qeydləri göstərir; canlı agent əməliyyatları yoxdur.</span>
             </div>
           </div>
         </div>
@@ -223,24 +231,24 @@
       <div class="container footer-grid">
         <div>
           <a href="index.html" class="brand footer-brand">
-            <span class="brand-mark">M</span>
-            <span>Multi-Agent</span>
+            <span class="brand-mark">A</span>
+            <span>Al Business</span>
           </a>
-          <p>Otomasyon, kod üretimi ve deploy sürecini tek panelden yönetir.</p>
+          <p>Rəqəmsal ideyalarınızı planlaşdırmaq üçün çox-agentli panel.</p>
         </div>
 
         <div>
-          <h3>İletişim</h3>
+          <h3>Əlaqə</h3>
           <ul>
-            <li>Email: hello@multiagent.example</li>
+            <li>Email: hello@albusiness.example</li>
             <li>Telefon: +90 555 123 45 67</li>
-            <li>İstanbul, Türkiye</li>
+            <li>İstanbul, Türkiyə</li>
           </ul>
         </div>
       </div>
 
       <div class="container footer-bottom">
-        <p>© <span id="year"></span> Multi-Agent Studio</p>
+        <p>© <span id="year"></span> Al Business</p>
       </div>
     </footer>
 
